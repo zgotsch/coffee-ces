@@ -84,14 +84,11 @@ attachRenderer = (engine, canvas) ->
             renderable = components?.renderable
             positioned = components?.positioned
             if renderable and positioned
-                # console.log "Rendering #{renderable} at", renderable.pos
                 ctx.drawImage Resources.get(renderable.url),
                             renderable.pos[0], renderable.pos[1],
                             renderable.size[0], renderable.size[1],
                             positioned.pos[0], positioned.pos[1],
                             renderable.size[0], renderable.size[1]
-            else
-                console.log "not drawn: #{id}"
     )
     engine.addSystem renderer
 
