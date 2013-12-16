@@ -30,18 +30,23 @@ Resources = do ->
     }
 
 class Engine
-    constructor: (canvas) ->
-        @ctx = canvas.getContext '2d'
-
+    constructor: ->
         @entities = {}
         @systems = []
-        @components = {} #master component list for fast lookup
 
         @lastEntityId = 0
 
     createEntity: (components) ->
         @entities[@lastEntityId] = components
+        system.updateCache @lastEntityId, components for system in @systems
         @lastEntityId += 1
+
+    addSystem: (system) ->
+        @systems.push system
+        system.buildCache @entities
+
+    tick: ->
+        system.run @entities for system in @systems
 
 class Positioned
     constructor: (@pos = [0, 0]) ->
@@ -51,20 +56,44 @@ class Renderable
                   @pos = [0, 0],
                   @size = [128, 128]) ->
 
-renderer = (ctx, entities) ->
-    for id, components of entities
-        renderable = components?.renderable
-        positioned = components?.positioned
-        if renderable and positioned
-            # console.log "Rendering #{renderable} at", renderable.pos
-            ctx.drawImage Resources.get(renderable.url),
-                        renderable.pos[0], renderable.pos[1],
-                        renderable.size[0], renderable.size[1],
-                        positioned.pos[0], positioned.pos[1],
-                        renderable.size[0], renderable.size[1]
-        else
-            console.log "not drawn: #{id}"
+class System
+    constructor: (@satisfies, @fn) ->
+        @cache = []
 
+    buildCache: (entities) ->
+        for id, components of entities
+            if @satisfies components
+                @cache.push(id)
+
+    updateCache: (id, components) ->
+        if @satisfies components
+            @cache.push(id)
+
+    run: (entities) ->
+        for id in @cache
+            if _.has entities, id
+                @fn entities[id]
+
+attachRenderer = (engine, canvas) ->
+    ctx = canvas.getContext '2d'
+    renderer = new System(
+        (components) ->
+            _.has(components, "renderable") and _.has(components, "positioned")
+        ,
+        (components) ->
+            renderable = components?.renderable
+            positioned = components?.positioned
+            if renderable and positioned
+                # console.log "Rendering #{renderable} at", renderable.pos
+                ctx.drawImage Resources.get(renderable.url),
+                            renderable.pos[0], renderable.pos[1],
+                            renderable.size[0], renderable.size[1],
+                            positioned.pos[0], positioned.pos[1],
+                            renderable.size[0], renderable.size[1]
+            else
+                console.log "not drawn: #{id}"
+    )
+    engine.addSystem renderer
 
 #################
 
@@ -81,8 +110,7 @@ testEngine = (engine) ->
         "renderable": new Renderable(),
     }
 
-    console.log engine.entities
-    renderer engine.ctx, engine.entities
+    engine.tick()
 
 
 

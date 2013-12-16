@@ -19,6 +19,7 @@
 
   Resources.onReady(function() {
     var engine = new Engine(canvas);
+    attachRenderer(engine, canvas);
     testEngine(engine);
   });
   Resources.load("resources/sun.gif");
