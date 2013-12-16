@@ -1,0 +1,27 @@
+<!DOCTYPE html PUBLIC "->
+<html>
+<head>
+<script type="text/javascript" src="js/underscore-min.js"></script>
+<script type="text/javascript" src="js/main.js"></script>
+<style>
+  body {
+    background-color: darkgrey;
+  }
+</style>
+</head>
+<body>
+<script>
+  var canvas = document.createElement("canvas");
+  canvas.width = 500;
+  canvas.height = 760;
+  canvas.oncontextmenu = function() { return false; };
+  document.body.appendChild(canvas);
+
+  Resources.onReady(function() {
+    var engine = new Engine(canvas);
+    testEngine(engine);
+  });
+  Resources.load("resources/sun.gif");
+</script>
+</body>
+</html>
