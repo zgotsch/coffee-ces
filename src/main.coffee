@@ -36,6 +36,9 @@ class Engine
 
         @lastEntityId = 0
 
+        @running = false
+        @lastFrameTime = null
+
     createEntity: (components) ->
         @entities[@lastEntityId] = components
         system.updateCache @lastEntityId, components for system in @systems
@@ -45,8 +48,26 @@ class Engine
         @systems.push system
         system.buildCache @entities
 
-    tick: ->
-        system.run @entities for system in @systems
+    tick: (dt) ->
+        system.run @entities, dt for system in @systems
+
+    start: ->
+        @running = true
+        @lastFrameTime = null
+        requestAnimationFrame @gameLoop
+
+    gameLoop: (paintTime) =>
+        if @lastFrameTime == null
+            @lastFrameTime = paintTime
+            requestAnimationFrame @gameLoop
+        else
+            dt = (paintTime - @lastFrameTime) / 1000.0
+            @lastFrameTime = paintTime
+
+            @canvasUpdateFunction?()
+            @tick dt
+
+            requestAnimationFrame @gameLoop if @running
 
 class Positioned
     constructor: (@pos = [0, 0]) ->
@@ -69,10 +90,10 @@ class System
         if @satisfies components
             @cache.push(id)
 
-    run: (entities) ->
+    run: (entities, dt) ->
         for id in @cache
             if _.has entities, id
-                @fn entities[id]
+                @fn entities[id], dt
 
 attachRenderer = (engine, canvas) ->
     ctx = canvas.getContext '2d'
@@ -80,7 +101,7 @@ attachRenderer = (engine, canvas) ->
         (components) ->
             _.has(components, "renderable") and _.has(components, "positioned")
         ,
-        (components) ->
+        (components, dt) ->
             renderable = components?.renderable
             positioned = components?.positioned
             if renderable and positioned
@@ -91,6 +112,23 @@ attachRenderer = (engine, canvas) ->
                             renderable.size[0], renderable.size[1]
     )
     engine.addSystem renderer
+    engine.canvasUpdateFunction = ->
+        ctx.fillStyle = "lightgrey"
+        ctx.fillRect 0, 0, canvas.width, canvas.height
+
+class Moving
+    constructor: (@velocity = [10, 10]) ->
+
+attachMover = (engine) ->
+    mover = new System(
+        (components) ->
+            _.has(components, "positioned") and _.has(components, "moving")
+        ,
+        (components, dt) ->
+            components.positioned.pos[0] += components.moving.velocity[0] * dt
+            components.positioned.pos[1] += components.moving.velocity[1] * dt
+    )
+    engine.addSystem mover
 
 #################
 
@@ -101,16 +139,11 @@ testEngine = (engine) ->
     }
     engine.createEntity {
         "renderable": new Renderable(),
-        "positioned": new Positioned([200, 200])
+        "positioned": new Positioned([200, 200]),
+        "moving": new Moving()
     }
     engine.createEntity {
         "renderable": new Renderable(),
     }
 
-    engine.tick()
-
-
-
-
-
-
+    engine.start()
