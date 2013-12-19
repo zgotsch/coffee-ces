@@ -95,26 +95,27 @@ class System
             if _.has entities, id
                 @fn entities[id], dt
 
-attachRenderer = (engine, canvas) ->
-    ctx = canvas.getContext '2d'
-    renderer = new System(
-        (components) ->
-            _.has(components, "renderable") and _.has(components, "positioned")
-        ,
-        (components, dt) ->
-            renderable = components?.renderable
-            positioned = components?.positioned
-            if renderable and positioned
-                ctx.drawImage Resources.get(renderable.url),
-                            renderable.pos[0], renderable.pos[1],
-                            renderable.size[0], renderable.size[1],
-                            positioned.pos[0], positioned.pos[1],
-                            renderable.size[0], renderable.size[1]
-    )
-    engine.addSystem renderer
-    engine.canvasUpdateFunction = ->
-        ctx.fillStyle = "lightgrey"
-        ctx.fillRect 0, 0, canvas.width, canvas.height
+class Renderer
+    constructor: (canvas) ->
+        @canvas = canvas
+        @ctx = canvas.getContext '2d'
+        @system = new System(
+            (components) ->
+                _.has(components, "renderable") and _.has(components, "positioned")
+            ,
+            (components, dt) =>
+                renderable = components?.renderable
+                positioned = components?.positioned
+                if renderable and positioned
+                    @ctx.drawImage Resources.get(renderable.url),
+                                  renderable.pos[0], renderable.pos[1],
+                                  renderable.size[0], renderable.size[1],
+                                  positioned.pos[0], positioned.pos[1],
+                                  renderable.size[0], renderable.size[1]
+            )
+        @clearCanvas = =>
+            @ctx.fillStyle = "lightgrey"
+            @ctx.fillRect 0, 0, @canvas.width, @canvas.height
 
 class Moving
     constructor: (@velocity = [10, 10]) ->

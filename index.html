@@ -18,9 +18,13 @@
   document.body.appendChild(canvas);
 
   Resources.onReady(function() {
-    var engine = new Engine(canvas);
-    attachRenderer(engine, canvas);
+    var engine = new Engine();
+    var renderer = new Renderer(canvas);
+    engine.addSystem(renderer.system);
+    engine.canvasUpdateFunction = renderer.clearCanvas;
+
     attachMover(engine);
+
     testEngine(engine);
   });
   Resources.load("resources/sun.gif");
