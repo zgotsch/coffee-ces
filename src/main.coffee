@@ -64,10 +64,10 @@ Input = do ->
     }
 
 
-class Engine
-    keyForComponent = (component) ->
-        component.constructor.name.toLowerCase()
+keyForComponent = (component) ->
+    component.constructor.name.toLowerCase()
 
+class Engine
     constructor: ->
         @entities = {}
         @systems = []
@@ -87,18 +87,12 @@ class Engine
         system.updateCache id, componentsObject for system in @systems
         @lastEntityId += 1
 
-        entity = {"id": id, "components": componentsObject}
+        return new Entity id, componentsObject, this
 
     updateEntity: (id) ->
         # This needs to be called or the systems' caches won't be updated
         components = @entities[id]
         system.updateCache id, components for system in @systems
-
-    addComponent: (id, component) ->
-        componentObject = {}
-        componentObject[keyForComponent(component)] = component
-        _.extend @entities[id], componentObject
-        @updateEntity id
 
     addSystem: (system) ->
         @systems.push system
@@ -125,6 +119,20 @@ class Engine
             @afterTick?(dt)
 
             requestAnimationFrame @gameLoop if @running
+
+class Entity
+    constructor: (@id, @components, @engine) ->
+        @live = true
+
+    addComponent: (component) ->
+        componentObject = {}
+        componentObject[keyForComponent(component)] = component
+        _.extend @components, componentObject
+        @engine.updateEntity @id
+
+    removeComponent: (componentName) ->
+        if _.has @components, componentName
+            delete @components[componentName]
 
 class Positioned
     constructor: (@pos = [0, 0]) ->
@@ -255,7 +263,7 @@ testEngine = (engine) ->
     engine.start()
 
     _.delay (->
-        engine.addComponent(e1.id, new Moving())), 2000
+        e1.addComponent(new Moving())), 2000
     _.delay (->
         _.extend e3.components, {"positioned": new Positioned()}
         engine.updateEntity e3.id), 4000
