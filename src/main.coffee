@@ -133,6 +133,7 @@ class Entity
     removeComponent: (componentName) ->
         if _.has @components, componentName
             delete @components[componentName]
+            @engine.updateEntity @id
 
 class Positioned
     constructor: (@pos = [0, 0]) ->
@@ -173,8 +174,6 @@ class Renderer
                 _.has(components, "renderable") and _.has(components, "positioned")
             ,
             (components, dt) =>
-                renderable = components?.renderable
-                positioned = components?.positioned
                 if renderable and positioned
                     @ctx.drawImage Resources.get(renderable.url),
                                   renderable.pos[0], renderable.pos[1],
@@ -262,8 +261,12 @@ testEngine = (engine) ->
 
     engine.start()
 
+    # Two ways to add components
     _.delay (->
         e1.addComponent(new Moving())), 2000
     _.delay (->
         _.extend e3.components, {"positioned": new Positioned()}
         engine.updateEntity e3.id), 4000
+
+    # Removing components
+    _.delay (-> e1.removeComponent "moving"), 10000
