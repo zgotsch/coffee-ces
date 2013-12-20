@@ -38,6 +38,9 @@ Resources = do ->
     }
 
 class Engine
+    keyForComponent = (component) ->
+        component.constructor.name.toLowerCase()
+
     constructor: ->
         @entities = {}
         @systems = []
@@ -50,11 +53,25 @@ class Engine
     createEntity: (components) ->
         # there has to be a prettier way to do this
         componentsObject = {}
-        componentsObject[c.constructor.name.toLowerCase()] = c for c in components
+        componentsObject[keyForComponent(c)] = c for c in components
 
-        @entities[@lastEntityId] = componentsObject
-        system.updateCache @lastEntityId, componentsObject for system in @systems
+        id = @lastEntityId
+        @entities[id] = componentsObject
+        system.updateCache id, componentsObject for system in @systems
         @lastEntityId += 1
+
+        entity = {"id": id, "components": componentsObject}
+
+    updateEntity: (id) ->
+        # This needs to be called or the systems' caches won't be updated
+        components = @entities[id]
+        system.updateCache id, components for system in @systems
+
+    addComponent: (id, component) ->
+        componentObject = {}
+        componentObject[keyForComponent(component)] = component
+        _.extend @entities[id], componentObject
+        @updateEntity id
 
     addSystem: (system) ->
         @systems.push system
@@ -92,19 +109,23 @@ class Renderable
 
 class System
     constructor: (@satisfies, @fn) ->
-        @cache = []
+        @cache = {}
 
     buildCache: (entities) ->
         for id, components of entities
             if @satisfies components
-                @cache.push(id)
+                @cache[id] = true
 
     updateCache: (id, components) ->
         if @satisfies components
-            @cache.push(id)
+            @cache[id] = true
+        else
+            if _.has @cache, id
+                delete @cache[id]
+
 
     run: (entities, dt) ->
-        for id in @cache
+        for id in _.keys @cache
             if _.has entities, id
                 @fn entities[id], dt
 
@@ -169,17 +190,23 @@ attachMover = (engine) ->
 #################
 
 testEngine = (engine) ->
-    engine.createEntity [
+    e1 = engine.createEntity [
         new Renderable(),
         new Positioned()
     ]
-    engine.createEntity [
+    e2 = engine.createEntity [
         new Renderable(),
         new Positioned([200, 200]),
         new Moving()
     ]
-    engine.createEntity [
+    e3 = engine.createEntity [
         new Renderable(),
     ]
 
     engine.start()
+
+    _.delay (->
+        engine.addComponent(e1.id, new Moving())), 2000
+    _.delay (->
+        _.extend e3.components, {"positioned": new Positioned()}
+        engine.updateEntity e3.id), 4000

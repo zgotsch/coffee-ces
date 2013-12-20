@@ -61,6 +61,12 @@ Resources = (function() {
 })();
 
 Engine = (function() {
+  var keyForComponent;
+
+  keyForComponent = function(component) {
+    return component.constructor.name.toLowerCase();
+  };
+
   function Engine() {
     this.gameLoop = __bind(this.gameLoop, this);    this.entities = {};
     this.systems = [];
@@ -70,20 +76,47 @@ Engine = (function() {
   }
 
   Engine.prototype.createEntity = function(components) {
-    var c, componentsObject, system, _i, _j, _len, _len1, _ref;
+    var c, componentsObject, entity, id, system, _i, _j, _len, _len1, _ref;
 
     componentsObject = {};
     for (_i = 0, _len = components.length; _i < _len; _i++) {
       c = components[_i];
-      componentsObject[c.constructor.name.toLowerCase()] = c;
+      componentsObject[keyForComponent(c)] = c;
     }
-    this.entities[this.lastEntityId] = componentsObject;
+    id = this.lastEntityId;
+    this.entities[id] = componentsObject;
     _ref = this.systems;
     for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
       system = _ref[_j];
-      system.updateCache(this.lastEntityId, componentsObject);
+      system.updateCache(id, componentsObject);
     }
-    return this.lastEntityId += 1;
+    this.lastEntityId += 1;
+    return entity = {
+      "id": id,
+      "components": componentsObject
+    };
+  };
+
+  Engine.prototype.updateEntity = function(id) {
+    var components, system, _i, _len, _ref, _results;
+
+    components = this.entities[id];
+    _ref = this.systems;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      system = _ref[_i];
+      _results.push(system.updateCache(id, components));
+    }
+    return _results;
+  };
+
+  Engine.prototype.addComponent = function(id, component) {
+    var componentObject;
+
+    componentObject = {};
+    componentObject[keyForComponent(component)] = component;
+    _.extend(this.entities[id], componentObject);
+    return this.updateEntity(id);
   };
 
   Engine.prototype.addSystem = function(system) {
@@ -159,7 +192,7 @@ System = (function() {
   function System(satisfies, fn) {
     this.satisfies = satisfies;
     this.fn = fn;
-    this.cache = [];
+    this.cache = {};
   }
 
   System.prototype.buildCache = function(entities) {
@@ -169,7 +202,7 @@ System = (function() {
     for (id in entities) {
       components = entities[id];
       if (this.satisfies(components)) {
-        _results.push(this.cache.push(id));
+        _results.push(this.cache[id] = true);
       } else {
         _results.push(void 0);
       }
@@ -179,14 +212,18 @@ System = (function() {
 
   System.prototype.updateCache = function(id, components) {
     if (this.satisfies(components)) {
-      return this.cache.push(id);
+      return this.cache[id] = true;
+    } else {
+      if (_.has(this.cache, id)) {
+        return delete this.cache[id];
+      }
     }
   };
 
   System.prototype.run = function(entities, dt) {
     var id, _i, _len, _ref, _results;
 
-    _ref = this.cache;
+    _ref = _.keys(this.cache);
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       id = _ref[_i];
@@ -281,10 +318,21 @@ attachMover = function(engine) {
 };
 
 testEngine = function(engine) {
-  engine.createEntity([new Renderable(), new Positioned()]);
-  engine.createEntity([new Renderable(), new Positioned([200, 200]), new Moving()]);
-  engine.createEntity([new Renderable()]);
-  return engine.start();
+  var e1, e2, e3;
+
+  e1 = engine.createEntity([new Renderable(), new Positioned()]);
+  e2 = engine.createEntity([new Renderable(), new Positioned([200, 200]), new Moving()]);
+  e3 = engine.createEntity([new Renderable()]);
+  engine.start();
+  _.delay((function() {
+    return engine.addComponent(e1.id, new Moving());
+  }), 2000);
+  return _.delay((function() {
+    _.extend(e3.components, {
+      "positioned": new Positioned()
+    });
+    return engine.updateEntity(e3.id);
+  }), 4000);
 };
 
 /*
