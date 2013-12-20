@@ -214,6 +214,27 @@ attachMover = (engine) ->
     )
     engine.addSystem mover
 
+class PlayerControlled
+    constructor: (@playerSpeed=100) ->
+
+attachPlayerController = (engine) ->
+    playerController = new System(
+        (components) ->
+            _.has(components, "playercontrolled") and _.has(components, "positioned")
+        ,
+        (components, dt) ->
+            playerSpeed = components.playercontrolled.playerSpeed
+            if Input.isDown 'LEFT'
+                components.positioned.pos[0] += -playerSpeed * dt
+            if Input.isDown 'RIGHT'
+                components.positioned.pos[0] += playerSpeed * dt
+            if Input.isDown 'UP'
+                components.positioned.pos[1] += -playerSpeed * dt
+            if Input.isDown 'DOWN'
+                components.positioned.pos[1] += playerSpeed * dt
+    )
+    engine.addSystem playerController
+
 #################
 
 testEngine = (engine) ->
@@ -228,6 +249,7 @@ testEngine = (engine) ->
     ]
     e3 = engine.createEntity [
         new Renderable(),
+        new PlayerControlled()
     ]
 
     engine.start()
