@@ -101,6 +101,12 @@ class Engine
     tick: (dt) ->
         system.run @entities, dt for system in @systems
 
+    removeDeadEntities: ->
+        for id, components of @entities
+            if components.destroy?
+                delete @entities[id]
+                system.updateCache id, null for system in @systems
+
     start: ->
         @running = true
         @lastFrameTime = null
@@ -116,13 +122,13 @@ class Engine
 
             @beforeTick?(dt)
             @tick dt
+            @removeDeadEntities()
             @afterTick?(dt)
 
             requestAnimationFrame @gameLoop if @running
 
 class Entity
     constructor: (@id, @components, @engine) ->
-        @live = true
 
     addComponent: (component) ->
         componentObject = {}
@@ -134,6 +140,9 @@ class Entity
         if _.has @components, componentName
             delete @components[componentName]
             @engine.updateEntity @id
+
+    destroy: () ->
+        @components.destroy = true
 
 class Positioned
     constructor: (@pos = [0, 0]) ->
@@ -153,12 +162,12 @@ class System
                 @cache[id] = true
 
     updateCache: (id, components) ->
-        if @satisfies components
-            @cache[id] = true
-        else
+        # if components is null, we need to delete the entity
+        if components == null or !@satisfies components
             if _.has @cache, id
                 delete @cache[id]
-
+        else
+            @cache[id] = true
 
     run: (entities, dt) ->
         for id in _.keys @cache
@@ -270,3 +279,6 @@ testEngine = (engine) ->
 
     # Removing components
     _.delay (-> e1.removeComponent "moving"), 10000
+
+    # Deleting entities
+    _.delay (-> e2.destroy()), 6000

@@ -168,6 +168,33 @@ Engine = (function() {
     return _results;
   };
 
+  Engine.prototype.removeDeadEntities = function() {
+    var components, id, system, _ref, _results;
+
+    _ref = this.entities;
+    _results = [];
+    for (id in _ref) {
+      components = _ref[id];
+      if (components.destroy != null) {
+        delete this.entities[id];
+        _results.push((function() {
+          var _i, _len, _ref1, _results1;
+
+          _ref1 = this.systems;
+          _results1 = [];
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            system = _ref1[_i];
+            _results1.push(system.updateCache(id, null));
+          }
+          return _results1;
+        }).call(this));
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
   Engine.prototype.start = function() {
     this.running = true;
     this.lastFrameTime = null;
@@ -187,6 +214,7 @@ Engine = (function() {
         this.beforeTick(dt);
       }
       this.tick(dt);
+      this.removeDeadEntities();
       if (typeof this.afterTick === "function") {
         this.afterTick(dt);
       }
@@ -205,7 +233,6 @@ Entity = (function() {
     this.id = id;
     this.components = components;
     this.engine = engine;
-    this.live = true;
   }
 
   Entity.prototype.addComponent = function(component) {
@@ -219,8 +246,13 @@ Entity = (function() {
 
   Entity.prototype.removeComponent = function(componentName) {
     if (_.has(this.components, componentName)) {
-      return delete this.components[componentName];
+      delete this.components[componentName];
+      return this.engine.updateEntity(this.id);
     }
+  };
+
+  Entity.prototype.destroy = function() {
+    return this.components.destroy = true;
   };
 
   return Entity;
@@ -270,12 +302,12 @@ System = (function() {
   };
 
   System.prototype.updateCache = function(id, components) {
-    if (this.satisfies(components)) {
-      return this.cache[id] = true;
-    } else {
+    if (components === null || !this.satisfies(components)) {
       if (_.has(this.cache, id)) {
         return delete this.cache[id];
       }
+    } else {
+      return this.cache[id] = true;
     }
   };
 
@@ -308,10 +340,6 @@ Renderer = (function() {
     this.system = new System(function(components) {
       return _.has(components, "renderable") && _.has(components, "positioned");
     }, function(components, dt) {
-      var positioned, renderable;
-
-      renderable = components != null ? components.renderable : void 0;
-      positioned = components != null ? components.positioned : void 0;
       if (renderable && positioned) {
         return _this.ctx.drawImage(Resources.get(renderable.url), renderable.pos[0], renderable.pos[1], renderable.size[0], renderable.size[1], positioned.pos[0], positioned.pos[1], renderable.size[0], renderable.size[1]);
       }
@@ -420,12 +448,18 @@ testEngine = function(engine) {
   _.delay((function() {
     return e1.addComponent(new Moving());
   }), 2000);
-  return _.delay((function() {
+  _.delay((function() {
     _.extend(e3.components, {
       "positioned": new Positioned()
     });
     return engine.updateEntity(e3.id);
   }), 4000);
+  _.delay((function() {
+    return e1.removeComponent("moving");
+  }), 10000);
+  return _.delay((function() {
+    return e2.destroy();
+  }), 6000);
 };
 
 /*
