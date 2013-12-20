@@ -60,13 +60,18 @@ Engine = (function() {
   }
 
   Engine.prototype.createEntity = function(components) {
-    var system, _i, _len, _ref;
+    var c, componentsObject, system, _i, _j, _len, _len1, _ref;
 
-    this.entities[this.lastEntityId] = components;
+    componentsObject = {};
+    for (_i = 0, _len = components.length; _i < _len; _i++) {
+      c = components[_i];
+      componentsObject[c.constructor.name.toLowerCase()] = c;
+    }
+    this.entities[this.lastEntityId] = componentsObject;
     _ref = this.systems;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      system = _ref[_i];
-      system.updateCache(this.lastEntityId, components);
+    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+      system = _ref[_j];
+      system.updateCache(this.lastEntityId, componentsObject);
     }
     return this.lastEntityId += 1;
   };
@@ -234,18 +239,9 @@ attachMover = function(engine) {
 };
 
 testEngine = function(engine) {
-  engine.createEntity({
-    "renderable": new Renderable(),
-    "positioned": new Positioned()
-  });
-  engine.createEntity({
-    "renderable": new Renderable(),
-    "positioned": new Positioned([200, 200]),
-    "moving": new Moving()
-  });
-  engine.createEntity({
-    "renderable": new Renderable()
-  });
+  engine.createEntity([new Renderable(), new Positioned()]);
+  engine.createEntity([new Renderable(), new Positioned([200, 200]), new Moving()]);
+  engine.createEntity([new Renderable()]);
   return engine.start();
 };
 

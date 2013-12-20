@@ -40,8 +40,12 @@ class Engine
         @lastFrameTime = null
 
     createEntity: (components) ->
-        @entities[@lastEntityId] = components
-        system.updateCache @lastEntityId, components for system in @systems
+        # there has to be a prettier way to do this
+        componentsObject = {}
+        componentsObject[c.constructor.name.toLowerCase()] = c for c in components
+
+        @entities[@lastEntityId] = componentsObject
+        system.updateCache @lastEntityId, componentsObject for system in @systems
         @lastEntityId += 1
 
     addSystem: (system) ->
@@ -134,17 +138,17 @@ attachMover = (engine) ->
 #################
 
 testEngine = (engine) ->
-    engine.createEntity {
-        "renderable": new Renderable(),
-        "positioned": new Positioned()
-    }
-    engine.createEntity {
-        "renderable": new Renderable(),
-        "positioned": new Positioned([200, 200]),
-        "moving": new Moving()
-    }
-    engine.createEntity {
-        "renderable": new Renderable(),
-    }
+    engine.createEntity [
+        new Renderable(),
+        new Positioned()
+    ]
+    engine.createEntity [
+        new Renderable(),
+        new Positioned([200, 200]),
+        new Moving()
+    ]
+    engine.createEntity [
+        new Renderable(),
+    ]
 
     engine.start()
