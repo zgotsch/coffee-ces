@@ -183,12 +183,13 @@ class Renderer
                 _.has(components, "renderable") and _.has(components, "positioned")
             ,
             (components, dt) =>
-                if renderable and positioned
-                    @ctx.drawImage Resources.get(renderable.url),
-                                  renderable.pos[0], renderable.pos[1],
-                                  renderable.size[0], renderable.size[1],
-                                  positioned.pos[0], positioned.pos[1],
-                                  renderable.size[0], renderable.size[1]
+                renderable = components.renderable
+                positioned = components.positioned
+                @ctx.drawImage Resources.get(renderable.url),
+                                renderable.pos[0], renderable.pos[1],
+                                renderable.size[0], renderable.size[1],
+                                positioned.pos[0], positioned.pos[1],
+                                renderable.size[0], renderable.size[1]
             )
         @clearCanvas = (dt) =>
             @ctx.fillStyle = "lightgrey"

@@ -340,9 +340,11 @@ Renderer = (function() {
     this.system = new System(function(components) {
       return _.has(components, "renderable") && _.has(components, "positioned");
     }, function(components, dt) {
-      if (renderable && positioned) {
-        return _this.ctx.drawImage(Resources.get(renderable.url), renderable.pos[0], renderable.pos[1], renderable.size[0], renderable.size[1], positioned.pos[0], positioned.pos[1], renderable.size[0], renderable.size[1]);
-      }
+      var positioned, renderable;
+
+      renderable = components.renderable;
+      positioned = components.positioned;
+      return _this.ctx.drawImage(Resources.get(renderable.url), renderable.pos[0], renderable.pos[1], renderable.size[0], renderable.size[1], positioned.pos[0], positioned.pos[1], renderable.size[0], renderable.size[1]);
     });
     this.clearCanvas = function(dt) {
       _this.ctx.fillStyle = "lightgrey";
