@@ -1,3 +1,11 @@
+sum = (list) ->
+    _.foldl list, ((s, x) -> s + x), 0
+
+average = (list) ->
+    sum(list) / list.length
+
+# ========================
+
 Resources = do ->
     resources = {}
     callbacks = []
@@ -68,8 +76,9 @@ class Engine
             dt = (paintTime - @lastFrameTime) / 1000.0
             @lastFrameTime = paintTime
 
-            @canvasUpdateFunction?()
+            @beforeTick?(dt)
             @tick dt
+            @afterTick?(dt)
 
             requestAnimationFrame @gameLoop if @running
 
@@ -117,9 +126,31 @@ class Renderer
                                   positioned.pos[0], positioned.pos[1],
                                   renderable.size[0], renderable.size[1]
             )
-        @clearCanvas = =>
+        @clearCanvas = (dt) =>
             @ctx.fillStyle = "lightgrey"
             @ctx.fillRect 0, 0, @canvas.width, @canvas.height
+
+        @drawFramerate = (dt) =>
+            @updateAndDrawFramerate dt if @showFramerate
+
+        @framerates = []
+        @showFramerate = true
+
+    toggleFramerate: ->
+        @showFramerate = !@showFramerate
+
+    updateAndDrawFramerate: (dt) ->
+        drawFramerate = =>
+            @ctx.save()
+            @ctx.fillStyle = "black"
+            @ctx.font = "30px sans-serif"
+            @ctx.fillText average(@framerates).toFixed(1), 50, 50
+            @ctx.restore()
+        @framerates.push(1/dt)
+        while @framerates.length > 10
+            @framerates.shift()
+        drawFramerate()
+
 
 class Moving
     constructor: (@velocity = [10, 10]) ->
