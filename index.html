@@ -1,8 +1,7 @@
 <!DOCTYPE html PUBLIC "->
 <html>
 <head>
-<script type="text/javascript" src="js/underscore-min.js"></script>
-<script type="text/javascript" src="js/main.js"></script>
+<script type="text/javascript" src="static/bundle.js"></script>
 <style>
   body {
     background-color: darkgrey;
@@ -17,20 +16,7 @@
   canvas.oncontextmenu = function() { return false; };
   document.body.appendChild(canvas);
 
-  Resources.onReady(function() {
-    var engine = new Engine();
-    var renderer = new Renderer(canvas);
-    engine.addSystem(renderer.system);
-
-    engine.beforeTick = renderer.clearCanvas;
-    engine.afterTick = renderer.drawFramerate;
-
-    attachMover(engine);
-    attachPlayerController(engine);
-
-    testEngine(engine);
-  });
-  Resources.load("resources/sun.gif");
+  createAndTestEngine(canvas);
 </script>
 </body>
 </html>

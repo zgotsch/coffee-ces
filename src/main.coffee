@@ -1,224 +1,10 @@
-sum = (list) ->
-    _.foldl list, ((s, x) -> s + x), 0
-
-average = (list) ->
-    sum(list) / list.length
-
-# ========================
-
-Resources = do ->
-    resources = {}
-    callbacks = []
-
-    ready = -> _.all _.values(resources)
-
-    load = (url) ->
-        if resources[url]
-            return resources[url]
-        else
-            img = new Image()
-            img.onload = ->
-                resources[url] = img
-                if ready()
-                    cb() for cb in callbacks
-            resources[url] = false
-            img.src = url
-
-    get = (url) -> resources[url]
-
-    onReady = (callback) ->
-        callbacks.push callback
-        if ready() and ! _.isEmpty resources
-            callback()
-
-    {
-        load: load,
-        get: get,
-        onReady: onReady
-    }
-
-Input = do ->
-    keys = {}
-
-    setKey = (event, status) ->
-        code = event.keyCode
-
-        key = switch code
-            when 32 then "SPACE"
-            when 37 then "LEFT"
-            when 38 then "UP"
-            when 39 then "RIGHT"
-            when 40 then "DOWN"
-            when 187 then "+"
-            when 189 then "-"
-            else String.fromCharCode code
-
-        keys[key] = status
-
-    document.addEventListener 'keydown', (e) -> setKey e, true
-    document.addEventListener 'keyup', (e) -> setKey e, false
-    document.addEventListener 'blur', -> keys = {}
-
-    {
-        isDown: (key) -> keys[key.toUpperCase()]
-    }
-
-
-keyForComponent = (component) ->
-    component.constructor.name.toLowerCase()
-
-class Engine
-    constructor: ->
-        @entities = {}
-        @systems = []
-
-        @lastEntityId = 0
-
-        @running = false
-        @lastFrameTime = null
-
-    createEntity: (components) ->
-        # there has to be a prettier way to do this
-        componentsObject = {}
-        componentsObject[keyForComponent(c)] = c for c in components
-
-        id = @lastEntityId
-        @entities[id] = componentsObject
-        system.updateCache id, componentsObject for system in @systems
-        @lastEntityId += 1
-
-        return new Entity id, componentsObject, this
-
-    updateEntity: (id) ->
-        # This needs to be called or the systems' caches won't be updated
-        components = @entities[id]
-        system.updateCache id, components for system in @systems
-
-    addSystem: (system) ->
-        @systems.push system
-        system.buildCache @entities
-
-    tick: (dt) ->
-        system.run @entities, dt for system in @systems
-
-    removeDeadEntities: ->
-        for id, components of @entities
-            if components.destroy?
-                delete @entities[id]
-                system.updateCache id, null for system in @systems
-
-    start: ->
-        @running = true
-        @lastFrameTime = null
-        requestAnimationFrame @gameLoop
-
-    gameLoop: (paintTime) =>
-        if @lastFrameTime == null
-            @lastFrameTime = paintTime
-            requestAnimationFrame @gameLoop
-        else
-            dt = (paintTime - @lastFrameTime) / 1000.0
-            @lastFrameTime = paintTime
-
-            @beforeTick?(dt)
-            @tick dt
-            @removeDeadEntities()
-            @afterTick?(dt)
-
-            requestAnimationFrame @gameLoop if @running
-
-class Entity
-    constructor: (@id, @components, @engine) ->
-
-    addComponent: (component) ->
-        componentObject = {}
-        componentObject[keyForComponent(component)] = component
-        _.extend @components, componentObject
-        @engine.updateEntity @id
-
-    removeComponent: (componentName) ->
-        if _.has @components, componentName
-            delete @components[componentName]
-            @engine.updateEntity @id
-
-    destroy: () ->
-        @components.destroy = true
-
-class Positioned
-    constructor: (@pos = [0, 0]) ->
-
-class Renderable
-    constructor: (@url = "resources/sun.gif",
-                  @pos = [0, 0],
-                  @size = [128, 128]) ->
-
-class System
-    constructor: (@satisfies, @fn) ->
-        @cache = {}
-
-    buildCache: (entities) ->
-        for id, components of entities
-            if @satisfies components
-                @cache[id] = true
-
-    updateCache: (id, components) ->
-        # if components is null, we need to delete the entity
-        if components == null or !@satisfies components
-            if _.has @cache, id
-                delete @cache[id]
-        else
-            @cache[id] = true
-
-    run: (entities, dt) ->
-        for id in _.keys @cache
-            if _.has entities, id
-                @fn entities[id], dt
-
-class Renderer
-    constructor: (canvas) ->
-        @canvas = canvas
-        @ctx = canvas.getContext '2d'
-        @system = new System(
-            (components) ->
-                _.has(components, "renderable") and _.has(components, "positioned")
-            ,
-            (components, dt) =>
-                renderable = components.renderable
-                positioned = components.positioned
-                @ctx.drawImage Resources.get(renderable.url),
-                                renderable.pos[0], renderable.pos[1],
-                                renderable.size[0], renderable.size[1],
-                                positioned.pos[0], positioned.pos[1],
-                                renderable.size[0], renderable.size[1]
-            )
-        @clearCanvas = (dt) =>
-            @ctx.fillStyle = "lightgrey"
-            @ctx.fillRect 0, 0, @canvas.width, @canvas.height
-
-        @drawFramerate = (dt) =>
-            @updateAndDrawFramerate dt if @showFramerate
-
-        @framerates = []
-        @showFramerate = true
-
-    toggleFramerate: ->
-        @showFramerate = !@showFramerate
-
-    updateAndDrawFramerate: (dt) ->
-        drawFramerate = =>
-            @ctx.save()
-            @ctx.fillStyle = "black"
-            @ctx.font = "30px sans-serif"
-            @ctx.fillText average(@framerates).toFixed(1), 50, 50
-            @ctx.restore()
-        @framerates.push(1/dt)
-        while @framerates.length > 10
-            @framerates.shift()
-        drawFramerate()
-
-
-class Moving
-    constructor: (@velocity = [10, 10]) ->
+_ = require 'underscore'
+Engine = require './engine.coffee'
+Input = require './input.coffee'
+Renderer = require './renderer.coffee'
+Resources = require './resources.coffee'
+System = require './system.coffee'
+components = require './components.coffee'
 
 attachMover = (engine) ->
     mover = new System(
@@ -230,9 +16,6 @@ attachMover = (engine) ->
             components.positioned.pos[1] += components.moving.velocity[1] * dt
     )
     engine.addSystem mover
-
-class PlayerControlled
-    constructor: (@playerSpeed=100) ->
 
 attachPlayerController = (engine) ->
     playerController = new System(
@@ -252,34 +35,48 @@ attachPlayerController = (engine) ->
     )
     engine.addSystem playerController
 
-#################
+createAndTestEngine = (canvas) ->
+    Resources.onReady ->
+        engine = new Engine()
+        renderer = new Renderer(canvas)
 
-testEngine = (engine) ->
-    e1 = engine.createEntity [
-        new Renderable(),
-        new Positioned()
-    ]
-    e2 = engine.createEntity [
-        new Renderable(),
-        new Positioned([200, 200]),
-        new Moving()
-    ]
-    e3 = engine.createEntity [
-        new Renderable(),
-        new PlayerControlled()
-    ]
+        engine.addSystem renderer.system
 
-    engine.start()
+        engine.beforeTick = renderer.clearCanvas
+        engine.afterTick = renderer.drawFramerate
 
-    # Two ways to add components
-    _.delay (->
-        e1.addComponent(new Moving())), 2000
-    _.delay (->
-        _.extend e3.components, {"positioned": new Positioned()}
-        engine.updateEntity e3.id), 4000
+        attachMover engine
+        attachPlayerController engine
 
-    # Removing components
-    _.delay (-> e1.removeComponent "moving"), 10000
+        e1 = engine.createEntity [
+            new components.Renderable(),
+            new components.Positioned()
+        ]
+        e2 = engine.createEntity [
+            new components.Renderable(),
+            new components.Positioned([200, 200]),
+            new components.Moving()
+        ]
+        e3 = engine.createEntity [
+            new components.Renderable(),
+            new components.PlayerControlled()
+        ]
 
-    # Deleting entities
-    _.delay (-> e2.destroy()), 6000
+        engine.start()
+
+        # Two ways to add components
+        _.delay (->
+            e1.addComponent(new components.Moving())), 2000
+        _.delay (->
+            _.extend e3.components, {"positioned": new components.Positioned()}
+            engine.updateEntity e3.id), 4000
+
+        # Removing components
+        _.delay (-> e1.removeComponent "moving"), 10000
+
+        # Deleting entities
+        _.delay (-> e2.destroy()), 6000
+
+    Resources.load 'resources/sun.gif'
+
+window.createAndTestEngine = createAndTestEngine
