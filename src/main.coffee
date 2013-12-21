@@ -92,7 +92,7 @@ createAndTestEngine = (canvas) ->
         e2 = engine.createEntity [
             new components.StaticSprite(),
             new components.Positioned([200, 200]),
-            new components.Velocity(10, 10)
+            new components.Velocity([10, 10])
         ]
         e3 = engine.createEntity [
             new components.AnimatedSprite('resources/dragonsprites.gif',
