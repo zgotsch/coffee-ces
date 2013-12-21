@@ -1,8 +1,10 @@
 _ = require 'underscore'
 
-class System
-    constructor: (@satisfies, @fn) ->
+class BasicSystem
+    constructor: (@requiredComponents, @fn) ->
         @cache = {}
+        @satisfies = (components) ->
+            _.every @requiredComponents, (required) -> _.has components, required
 
     buildCache: (entities) ->
         for id, components of entities
@@ -22,4 +24,9 @@ class System
             if _.has entities, id
                 @fn entities[id], dt
 
-module.exports = System
+class System extends BasicSystem
+    constructor: (@satisfies, @fn) ->
+        @cache = {}
+
+exports.BasicSystem = BasicSystem
+exports.System = System

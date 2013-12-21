@@ -1,16 +1,13 @@
 _ = require 'underscore'
 Resources = require './resources.coffee'
-System = require './system.coffee'
+{"BasicSystem": BasicSystem, "System": System} = require './system.coffee'
 util = require './util.coffee'
 
 class Renderer
     constructor: (canvas) ->
         @canvas = canvas
         @ctx = canvas.getContext '2d'
-        @system = new System(
-            (components) ->
-                _.has(components, "renderable") and _.has(components, "positioned")
-            ,
+        @system = new BasicSystem ["renderable", "positioned"], 
             (components, dt) =>
                 renderable = components.renderable
                 positioned = components.positioned
@@ -19,7 +16,7 @@ class Renderer
                                 renderable.size[0], renderable.size[1],
                                 positioned.pos[0], positioned.pos[1],
                                 renderable.size[0], renderable.size[1]
-            )
+
         @clearCanvas = (dt) =>
             @ctx.fillStyle = "lightgrey"
             @ctx.fillRect 0, 0, @canvas.width, @canvas.height

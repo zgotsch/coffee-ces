@@ -3,25 +3,19 @@ Engine = require './engine.coffee'
 Input = require './input.coffee'
 Renderer = require './renderer.coffee'
 Resources = require './resources.coffee'
-System = require './system.coffee'
+{"BasicSystem": BasicSystem, "System": System} = require './system.coffee'
 components = require './components.coffee'
 
 attachMover = (engine) ->
-    mover = new System(
-        (components) ->
-            _.has(components, "positioned") and _.has(components, "moving")
-        ,
+    mover = new BasicSystem ["positioned", "moving"],
         (components, dt) ->
             components.positioned.pos[0] += components.moving.velocity[0] * dt
             components.positioned.pos[1] += components.moving.velocity[1] * dt
-    )
+
     engine.addSystem mover
 
 attachPlayerController = (engine) ->
-    playerController = new System(
-        (components) ->
-            _.has(components, "playercontrolled") and _.has(components, "positioned")
-        ,
+    playerController = new BasicSystem ["playercontrolled", "positioned"],
         (components, dt) ->
             playerSpeed = components.playercontrolled.playerSpeed
             if Input.isDown 'LEFT'
@@ -32,7 +26,7 @@ attachPlayerController = (engine) ->
                 components.positioned.pos[1] += -playerSpeed * dt
             if Input.isDown 'DOWN'
                 components.positioned.pos[1] += playerSpeed * dt
-    )
+
     engine.addSystem playerController
 
 createAndTestEngine = (canvas) ->
