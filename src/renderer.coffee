@@ -7,16 +7,48 @@ class Renderer
     constructor: (canvas) ->
         @canvas = canvas
         @ctx = canvas.getContext '2d'
-        @system = new BasicSystem ["renderable", "positioned"], 
+        @system = new System(
+            (components) ->
+                _.has(components, "positioned") and
+                    (_.has(components, "staticsprite") or
+                     _.has(components, "animatedsprite"))
+            ,
             (components, dt) =>
-                renderable = components.renderable
                 positioned = components.positioned
-                @ctx.drawImage Resources.get(renderable.url),
-                                renderable.pos[0], renderable.pos[1],
-                                renderable.size[0], renderable.size[1],
-                                positioned.pos[0], positioned.pos[1],
-                                renderable.size[0], renderable.size[1]
+                staticSprite = components.staticsprite
+                animatedSprite = components.animatedsprite
 
+                if staticSprite
+                    @ctx.drawImage Resources.get(staticSprite.url),
+                                    staticSprite.pos[0], staticSprite.pos[1],
+                                    staticSprite.size[0], staticSprite.size[1],
+                                    positioned.pos[0], positioned.pos[1],
+                                    staticSprite.size[0], staticSprite.size[1]
+                else if animatedSprite
+                    if animatedSprite.speed > 0
+                        idx = Math.floor(
+                            animatedSprite.index += animatedSprite.speed * dt)
+                        max = animatedSprite.frameIndices.length
+                        frameIndex = animatedSprite.frameIndices[idx % max]
+
+                        if animatedSprite.once and idx > max
+                            animatedSprite.done = true
+                            # Don't draw
+                            return
+                    else
+                        frameIndex = 0
+
+                    spritePosition = animatedSprite.pos.slice()
+                    xySwitch = if animatedSprite.dir == 'vertical' then 1 else 0
+                    spritePosition[xySwitch] +=
+                        frameIndex * animatedSprite.size[xySwitch]
+
+                    @ctx.drawImage Resources.get(animatedSprite.url),
+                        spritePosition[0], spritePosition[1],
+                        animatedSprite.size[0], animatedSprite.size[1],
+                        positioned.pos[0], positioned.pos[1]
+                        animatedSprite.size[0], animatedSprite.size[1]
+            )
         @clearCanvas = (dt) =>
             @ctx.fillStyle = "lightgrey"
             @ctx.fillRect 0, 0, @canvas.width, @canvas.height
