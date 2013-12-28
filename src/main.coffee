@@ -70,6 +70,15 @@ attachTurner = (engine) ->
     )
     engine.addSystem turner
 
+attachStopsAfter = (engine) ->
+    stopsAfter = new BasicSystem ["velocity", "createdat", "stopsafter"], (components, dt) ->
+        if Date.now() - components.createdat.createdAt > components.stopsafter.time
+            delete components.stopsafter
+            components.velocity.vector[0] = 0
+            components.velocity.vector[1] = 0
+            return true
+
+    engine.addSystem stopsAfter
 
 createAndTestEngine = (canvas) ->
     Resources.onReady ->
@@ -84,10 +93,13 @@ createAndTestEngine = (canvas) ->
         attachPhysics engine
         attachPlayerController engine
         attachTurner engine
+        attachStopsAfter engine
 
         e1 = engine.createEntity [
             new components.StaticSprite(),
-            new components.Positioned()
+            new components.Positioned(),
+            new components.CreatedAt(),
+            new components.StopsAfter(10 * 1000)
         ]
         e2 = engine.createEntity [
             new components.StaticSprite(),

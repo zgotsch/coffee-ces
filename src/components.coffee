@@ -25,9 +25,18 @@ class PlayerControlled
 class Turnable
     constructor: (@sprites) ->
 
+class CreatedAt
+    constructor: () ->
+        @createdAt = Date.now()
+
+class StopsAfter
+    constructor: (@time = 1000) ->
+
 exports.Positioned = Positioned
 exports.StaticSprite = StaticSprite
 exports.AnimatedSprite = AnimatedSprite
 exports.Velocity = Velocity
 exports.PlayerControlled = PlayerControlled
 exports.Turnable = Turnable
+exports.CreatedAt = CreatedAt
+exports.StopsAfter = StopsAfter

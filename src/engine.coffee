@@ -33,7 +33,9 @@ class Engine
         system.buildCache @entities
 
     tick: (dt) ->
-        system.run @entities, dt for system in @systems
+        for system in @systems
+            idsToUpdate = system.run @entities, dt
+            @updateEntity id for id in idsToUpdate
 
     removeDeadEntities: ->
         for id, components of @entities

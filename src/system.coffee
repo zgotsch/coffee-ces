@@ -20,9 +20,13 @@ class BasicSystem
             @cache[id] = true
 
     run: (entities, dt) ->
+        idsToUpdate = []
         for id in _.keys @cache
             if _.has entities, id
-                @fn entities[id], dt
+                needsUpdate = @fn entities[id], dt
+                if needsUpdate
+                    idsToUpdate.push id
+        return idsToUpdate
 
 class System extends BasicSystem
     constructor: (@satisfies, @fn) ->
