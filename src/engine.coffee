@@ -48,10 +48,18 @@ class Engine
         @lastFrameTime = null
         requestAnimationFrame @gameLoop
 
+    reset: ->
+        # Not sure if the cancel and rerequest is necessary, otherwise it's
+        # sufficient to just reset @entities
+        if @rafId?
+            cancelAnimationFrame @rafId
+        @lastEntityId = 0
+        @entities = {}
+        @start()
+
     gameLoop: (paintTime) =>
         if @lastFrameTime == null
             @lastFrameTime = paintTime
-            requestAnimationFrame @gameLoop
         else
             dt = (paintTime - @lastFrameTime) / 1000.0
             @lastFrameTime = paintTime
@@ -61,6 +69,6 @@ class Engine
             @removeDeadEntities()
             @afterTick?(dt)
 
-            requestAnimationFrame @gameLoop if @running
+        @rafId = requestAnimationFrame @gameLoop if @running
 
 module.exports = Engine

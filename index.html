@@ -6,17 +6,61 @@
   body {
     background-color: darkgrey;
   }
+  #button-container {
+    width: 200px;
+    float: right;
+    text-align: right;
+  }
+  textarea#entities {
+    width: 100%;
+  }
+  #canvas-container {
+    float: left;
+  }
 </style>
+<script>
+  function updateEntityView(engine) {
+    var entityViewer = document.getElementById("entities");
+    entityViewer.innerHTML = JSON.stringify(engine.entities, null, "  ");
+  }
+
+  window.onload = function() {
+    window.canvas = document.createElement("canvas");
+    canvas.width = 500;
+    canvas.height = 760;
+    canvas.oncontextmenu = function() { return false; };
+
+    document.getElementById("canvas-container").appendChild(canvas);
+
+    window.engine = demo.createEngine(canvas);
+    window.setInterval("updateEntityView(engine)", 200);
+  };
+</script>
 </head>
 <body>
-<script>
-  var canvas = document.createElement("canvas");
-  canvas.width = 500;
-  canvas.height = 760;
-  canvas.oncontextmenu = function() { return false; };
-  document.body.appendChild(canvas);
+  <div id="button-container">
+    <button onclick="demo.resetEngine(engine)">Reset engine</button>
+    <br />
+    <button onclick="demo.createSpriteEntity(engine)">Create entity</button>
+    <br />
+    <button onclick="demo.createMovingEntity(engine)">Create moving entity</button>
+    <br />
+    <button onclick="demo.createAnimatedEntity(engine)">Create animated entity</button>
+    <br />
+    <button onclick="demo.createPlayerControlledEntity(engine)">Create player-controlled sprite</button>
+    <br/>
+    <button onclick="demo.createTurnableEntity(engine)">Create player-controlled<br />
+      interactive sprite entity</button>
+    <br/>
+    <button onclick="demo.addRemoveComponents(engine)">Dynamically add/remove components</button>
+    <br/>
+    <button onclick="demo.systemModification(engine)">Using systems to modify entities</button>
 
-  createAndTestEngine(canvas);
-</script>
+    <label for="entities">Entities:</label>
+    <textarea id="entities" rows="42">
+    </textarea>
+  </div>
+  <div id="canvas-container">
+  </div>
 </body>
 </html>

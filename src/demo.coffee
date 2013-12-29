@@ -80,33 +80,64 @@ attachStopsAfter = (engine) ->
 
     engine.addSystem stopsAfter
 
-createAndTestEngine = (canvas) ->
+createEngine = (canvas) ->
+    engine = new Engine()
+    renderer = new Renderer(canvas)
+
+    engine.addSystem renderer.system
+
+    engine.beforeTick = renderer.clearCanvas
+    engine.afterTick = renderer.drawFramerate
+
+    attachPhysics engine
+    attachPlayerController engine
+    attachTurner engine
+    attachStopsAfter engine
+
     Resources.onReady ->
-        engine = new Engine()
-        renderer = new Renderer(canvas)
+        engine.start()
 
-        engine.addSystem renderer.system
+    Resources.load ['resources/sun.gif', 'resources/dragonsprites.gif']
 
-        engine.beforeTick = renderer.clearCanvas
-        engine.afterTick = renderer.drawFramerate
+    return engine
 
-        attachPhysics engine
-        attachPlayerController engine
-        attachTurner engine
-        attachStopsAfter engine
-
-        e1 = engine.createEntity [
+window.demo = {
+    createEngine: createEngine,
+    resetEngine: (engine) ->
+        engine.reset()
+    ,
+    createSpriteEntity: (engine) ->
+        entity = engine.createEntity [
             new components.StaticSprite(),
             new components.Positioned(),
-            new components.CreatedAt(),
-            new components.StopsAfter(10 * 1000)
         ]
-        e2 = engine.createEntity [
+    ,
+    createMovingEntity: (engine) ->
+        entity = engine.createEntity [
             new components.StaticSprite(),
-            new components.Positioned([200, 200]),
+            new components.Positioned([0, 150]),
             new components.Velocity([10, 10])
         ]
-        e3 = engine.createEntity [
+    ,
+    createAnimatedEntity: (engine) ->
+        entity = engine.createEntity [
+            new components.AnimatedSprite('resources/dragonsprites.gif',
+                [0, 0], [75, 70], 10, 'horiz', false,
+                [0, 1, 2, 3, 4, 5, 6, 7, 8]),
+            new components.Positioned([0, 300]),
+        ]
+    ,
+    createPlayerControlledEntity: (engine) ->
+        entity = engine.createEntity [
+            new components.Positioned([250, 0]),
+            new components.StaticSprite()
+            new components.PlayerControlled(),
+            new components.Velocity()
+        ]
+    ,
+    createTurnableEntity: (engine) ->
+        entity = engine.createEntity [
+            new components.Positioned([250, 250]),
             new components.AnimatedSprite('resources/dragonsprites.gif',
                 [0, 0], [75, 70], 10, 'horiz', false,
                 [0, 1, 2, 3, 4, 5, 6, 7, 8]),
@@ -138,22 +169,36 @@ createAndTestEngine = (canvas) ->
             new components.PlayerControlled(),
             new components.Velocity()
         ]
-
-        engine.start()
-
+    ,
+    addRemoveComponents: (engine) ->
+        entity = engine.createEntity [
+            new components.Positioned([0, 200]),
+            new components.StaticSprite()
+        ]
         # Two ways to add components
         _.delay (->
-            e1.addComponent(new components.Velocity([10, 10]))), 2000
+            entity.addComponent(new components.Velocity([10, 0]))), 3000
         _.delay (->
-            _.extend e3.components, {"positioned": new components.Positioned()}
-            engine.updateEntity e3.id), 4000
+            _.extend entity.components, {"animatedsprite": 
+                new components.AnimatedSprite('resources/dragonsprites.gif',
+                    [0, 0], [75, 70], 10, 'horiz', false,
+                    [0, 1, 2, 3, 4, 5, 6, 7, 8])}
+            engine.updateEntity entity.id), 8000
 
-        # Removing components
-        _.delay (-> e1.removeComponent "moving"), 10000
+        # Two ways to remove components
+        _.delay (-> entity.removeComponent "velocity"), 7000
+        _.delay (->
+            delete entity.components["staticsprite"]
+            engine.updateEntity entity.id), 13000
+    ,
+    systemModification: (engine) ->
+        entity = engine.createEntity [
+            new components.Positioned([0, 500]),
+            new components.Velocity([10, 0]),
+            new components.CreatedAt(),
+            new components.StopsAfter(10 * 1000),
+            new components.StaticSprite()
+        ]
+}
 
-        # Deleting entities
-        _.delay (-> e2.destroy()), 6000
-
-    Resources.load ['resources/sun.gif', 'resources/dragonsprites.gif']
-
-window.createAndTestEngine = createAndTestEngine
+window.createEngine = createEngine
