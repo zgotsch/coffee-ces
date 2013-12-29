@@ -7,13 +7,14 @@ class BasicSystem
             _.every @requiredComponents, (required) -> _.has components, required
 
     buildCache: (entities) ->
+        @cache = {}
         for id, components of entities
             if @satisfies components
                 @cache[id] = true
 
     updateCache: (id, components) ->
-        # if components is null, we need to delete the entity
-        if components == null or !@satisfies components
+        # if components is falsey, we need to delete the entity
+        if !components or !@satisfies components
             if _.has @cache, id
                 delete @cache[id]
         else

@@ -53,8 +53,8 @@ class Engine
         # sufficient to just reset @entities
         if @rafId?
             cancelAnimationFrame @rafId
-        @lastEntityId = 0
         @entities = {}
+        system.buildCache for system in @systems
         @start()
 
     gameLoop: (paintTime) =>
