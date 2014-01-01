@@ -9,8 +9,7 @@ class BasicSystem
     buildCache: (entities) ->
         @cache = {}
         for id, components of entities
-            if @satisfies components
-                @cache[id] = true
+            @updateCache id, components
 
     updateCache: (id, components) ->
         # if components is falsey, we need to delete the entity
