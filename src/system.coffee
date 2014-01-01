@@ -27,7 +27,7 @@ class BasicSystem
         for id in _.keys @cache
             if _.has entities, id
                 needsUpdate = @fn entities[id], dt
-                if needsUpdate
+                if needsUpdate == true
                     idsToUpdate.push id
         return idsToUpdate
 
