@@ -1,4 +1,4 @@
-class Positioned
+class Position
     constructor: (@pos = [0, 0]) ->
 
 class StaticSprite
@@ -19,7 +19,7 @@ class AnimatedSprite
 class Velocity
     constructor: (@vector = [0, 0]) ->
 
-class PlayerControlled
+class PlayerControl
     constructor: (@playerSpeed=100) ->
 
 class Turnable
@@ -32,11 +32,11 @@ class CreatedAt
 class StopsAfter
     constructor: (@time = 1000) ->
 
-exports.Positioned = Positioned
+exports.Position = Position
 exports.StaticSprite = StaticSprite
 exports.AnimatedSprite = AnimatedSprite
 exports.Velocity = Velocity
-exports.PlayerControlled = PlayerControlled
+exports.PlayerControl = PlayerControl
 exports.Turnable = Turnable
 exports.CreatedAt = CreatedAt
 exports.StopsAfter = StopsAfter

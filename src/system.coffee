@@ -1,10 +1,8 @@
 _ = require 'underscore'
 
-class BasicSystem
-    constructor: (@requiredComponents, @fn) ->
+class System
+    constructor: ->
         @cache = {}
-        @satisfies = (components) ->
-            _.every @requiredComponents, (required) -> _.has components, required
 
     buildCache: (entities) ->
         @clearCache()
@@ -26,19 +24,26 @@ class BasicSystem
         idsToUpdate = []
         for id in _.keys @cache
             if _.has entities, id
-                needsUpdate = @fn entities[id], dt
+                needsUpdate = @action entities[id], dt, entities
                 if needsUpdate == true
                     idsToUpdate.push id
         return idsToUpdate
 
-class System extends BasicSystem
-    constructor: (@satisfies, @fn) ->
-        @cache = {}
+    action: ->
 
-class CompsiteSystem extends BasicSystem
+    satisfies: -> false
+
+
+class BasicSystem extends System
+    constructor: (@requiredComponents) ->
+        super()
+
+    satisfies: (components) ->
+        _.every @requiredComponents, (required) -> _.has components, required
+
+
+class CompsiteSystem extends System
     constructor: (@systems...) ->
-        @fn = (components, dt) ->
-            system.fn components, dt for system in @systems
 
     buildCache: (entities) ->
         system.buildCache entities for system in @systems
@@ -57,6 +62,9 @@ class CompsiteSystem extends BasicSystem
             newIdsToUpdate = system.run entities, dt
             idsToUpdate = idsToUpdate.concat newIdsToUpdate
         return idsToUpdate
+
+    action: (components, dt, entities) ->
+        system.action components, dt, entities for system in @systems
 
 exports.BasicSystem = BasicSystem
 exports.System = System

@@ -1,6 +1,6 @@
 _ = require 'underscore'
 Resources = require './resources.coffee'
-{ "BasicSystem": BasicSystem, "System": System, "CompsiteSystem": CompsiteSystem } = require './system.coffee'
+systems = require './system.coffee'
 util = require './util.coffee'
 
 class Renderer
@@ -8,45 +8,56 @@ class Renderer
         @canvas = canvas
         @ctx = canvas.getContext '2d'
 
-        staticRenderingSystem = new BasicSystem ['positioned', 'staticsprite'], (components, dt) =>
-            positioned = components.positioned
-            staticSprite = components.staticsprite
+        class StaticRenderingSystem extends systems.BasicSystem
+            constructor: (@ctx) ->
+                super ['position', 'staticsprite']
 
-            @ctx.drawImage Resources.get(staticSprite.url),
-                            staticSprite.pos[0], staticSprite.pos[1],
-                            staticSprite.size[0], staticSprite.size[1],
-                            positioned.pos[0], positioned.pos[1],
-                            staticSprite.size[0], staticSprite.size[1]
+            action: (components, dt) ->
+                position = components.position
+                staticSprite = components.staticsprite
 
-        animatedRenderingSystem = new BasicSystem ['positioned', 'animatedsprite'], (components, dt) =>
-            positioned = components.positioned
-            animatedSprite = components.animatedsprite
+                @ctx.drawImage Resources.get(staticSprite.url),
+                                staticSprite.pos[0], staticSprite.pos[1],
+                                staticSprite.size[0], staticSprite.size[1],
+                                position.pos[0], position.pos[1],
+                                staticSprite.size[0], staticSprite.size[1]
 
-            if animatedSprite.speed > 0
-                idx = Math.floor(
-                    animatedSprite.index += animatedSprite.speed * dt)
-                max = animatedSprite.frameIndices.length
-                frameIndex = animatedSprite.frameIndices[idx % max]
 
-                if animatedSprite.once and idx > max
-                    animatedSprite.done = true
-                    # Don't draw
-                    return
-            else
-                frameIndex = 0
+        class AnimatedRenderingSystem extends systems.BasicSystem
+            constructor: (@ctx) ->
+                super ['position', 'animatedsprite']
 
-            spritePosition = animatedSprite.pos.slice()
-            xySwitch = if animatedSprite.dir == 'vertical' then 1 else 0
-            spritePosition[xySwitch] +=
-                frameIndex * animatedSprite.size[xySwitch]
+            action: (components, dt) ->
+                position = components.position
+                animatedSprite = components.animatedsprite
 
-            @ctx.drawImage Resources.get(animatedSprite.url),
-                spritePosition[0], spritePosition[1],
-                animatedSprite.size[0], animatedSprite.size[1],
-                positioned.pos[0], positioned.pos[1]
-                animatedSprite.size[0], animatedSprite.size[1]
+                if animatedSprite.speed > 0
+                    idx = Math.floor(
+                        animatedSprite.index += animatedSprite.speed * dt)
+                    max = animatedSprite.frameIndices.length
+                    frameIndex = animatedSprite.frameIndices[idx % max]
 
-        @system = new CompsiteSystem staticRenderingSystem, animatedRenderingSystem
+                    if animatedSprite.once and idx > max
+                        animatedSprite.done = true
+                        # Don't draw
+                        return
+                else
+                    frameIndex = 0
+
+                spritePosition = animatedSprite.pos.slice()
+                xySwitch = if animatedSprite.dir == 'vertical' then 1 else 0
+                spritePosition[xySwitch] +=
+                    frameIndex * animatedSprite.size[xySwitch]
+
+                @ctx.drawImage Resources.get(animatedSprite.url),
+                    spritePosition[0], spritePosition[1],
+                    animatedSprite.size[0], animatedSprite.size[1],
+                    position.pos[0], position.pos[1]
+                    animatedSprite.size[0], animatedSprite.size[1]
+
+        @system = new systems.CompsiteSystem(
+            new StaticRenderingSystem(@ctx),
+            new AnimatedRenderingSystem(@ctx))
 
         @clearCanvas = (dt) =>
             @ctx.fillStyle = "lightgrey"
