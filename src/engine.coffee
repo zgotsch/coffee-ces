@@ -17,29 +17,27 @@ class Engine
         componentsObject[util.keyForComponent(c)] = c for c in components
 
         id = @lastEntityId
-        @entities[id] = componentsObject
-        system.updateCache id, componentsObject for system in @systems
+        entity = new Entity id, componentsObject, this
+        @entities[id] = entity
+        system.updateCache entity for system in @systems
         @lastEntityId += 1
 
-        return new Entity id, componentsObject, this
+        return entity
 
-    updateEntity: (id) ->
+    updateEntity: (entity) ->
         # This needs to be called or the systems' caches won't be updated
-        components = @entities[id]
-        system.updateCache id, components for system in @systems
+        system.updateCache entity for system in @systems
 
     addSystem: (system) ->
         @systems.push system
         system.buildCache @entities
 
     tick: (dt) ->
-        for system in @systems
-            idsToUpdate = system.run @entities, dt
-            @updateEntity id for id in idsToUpdate
+        system.run @entities, dt for system in @systems
 
     removeDeadEntities: ->
-        for id, components of @entities
-            if components.destroy?
+        for id, entity of @entities
+            if entity.components.destroy?
                 delete @entities[id]
                 system.updateCache id, null for system in @systems
 

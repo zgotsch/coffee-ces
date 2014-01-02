@@ -9,15 +9,19 @@ class Entity
             componentObject = {}
             componentObject[util.keyForComponent(component)] = component
             _.extend @components, componentObject
-            @engine.updateEntity @id
+            @engine.updateEntity this
 
     removeComponent: (componentName) ->
         if @components
             if _.has @components, componentName
                 delete @components[componentName]
-                @engine.updateEntity @id
+                @engine.updateEntity this
 
-    destroy: () ->
+    destroy: ->
         @components.destroy = true
+
+    toJSON: ->
+        {id: @id, components: @components}
+
 
 module.exports = Entity

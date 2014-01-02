@@ -100,21 +100,17 @@ window.demo = {
             new components.Position([0, 200]),
             new components.StaticSprite()
         ]
-        # Two ways to add components
+        console.log entity
         _.delay (->
             entity.addComponent(new components.Velocity([10, 0]))), 3000
         _.delay (->
-            _.extend entity.components, {"animatedsprite": 
+            entity.addComponent(
                 new components.AnimatedSprite('resources/dragonsprites.gif',
                     [0, 0], [75, 70], 10, 'horiz', false,
-                    [0, 1, 2, 3, 4, 5, 6, 7, 8])}
-            engine.updateEntity entity.id), 8000
+                    [0, 1, 2, 3, 4, 5, 6, 7, 8]))), 8000
 
-        # Two ways to remove components
         _.delay (-> entity.removeComponent "velocity"), 7000
-        _.delay (->
-            delete entity.components["staticsprite"]
-            engine.updateEntity entity.id), 13000
+        _.delay (-> entity.removeComponent 'staticsprite'), 13000
     ,
     systemModification: (engine) ->
         entity = engine.createEntity [

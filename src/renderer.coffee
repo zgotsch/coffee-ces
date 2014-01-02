@@ -12,9 +12,9 @@ class Renderer
             constructor: (@ctx) ->
                 super ['position', 'staticsprite']
 
-            action: (components, dt) ->
-                position = components.position
-                staticSprite = components.staticsprite
+            action: (entity, dt) ->
+                position = entity.components.position
+                staticSprite = entity.components.staticsprite
 
                 @ctx.drawImage Resources.get(staticSprite.url),
                                 staticSprite.pos[0], staticSprite.pos[1],
@@ -27,9 +27,9 @@ class Renderer
             constructor: (@ctx) ->
                 super ['position', 'animatedsprite']
 
-            action: (components, dt) ->
-                position = components.position
-                animatedSprite = components.animatedsprite
+            action: (entity, dt) ->
+                position = entity.components.position
+                animatedSprite = entity.components.animatedsprite
 
                 if animatedSprite.speed > 0
                     idx = Math.floor(
