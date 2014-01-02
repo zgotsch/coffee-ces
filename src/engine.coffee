@@ -52,7 +52,7 @@ class Engine
         if @rafId?
             cancelAnimationFrame @rafId
         @entities = {}
-        system.buildCache for system in @systems
+        system.buildCache() for system in @systems
         @start()
 
     gameLoop: (paintTime) =>
