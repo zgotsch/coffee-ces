@@ -38,8 +38,9 @@ class Engine
     removeDeadEntities: ->
         for id, entity of @entities
             if entity.components.destroy?
+                entity.components = null
+                system.updateCache entity for system in @systems
                 delete @entities[id]
-                system.updateCache id, null for system in @systems
 
     start: ->
         @running = true
